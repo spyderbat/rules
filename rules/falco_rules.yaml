@@ -497,7 +497,7 @@
   tags: [host, container, filesystem, mitre_discovery, T1546.004]
 
 # List of allowed container images that are known to execute binaries not part of their base image.
-# Users can use this list to better tune the rule below (i.e reducing false positives) by considering their workloads, 
+# Users can use this list to better tune the rule below (i.e reducing false positives) by considering their workloads,
 # since this requires application specific knowledge.
 - list: known_drop_and_execute_containers
   items: []
@@ -510,14 +510,14 @@
   condition: >
     spawned_process
     and container
-    and proc.is_exe_upper_layer=true 
+    and proc.is_exe_upper_layer=true
     and not container.image.repository in (known_drop_and_execute_containers)
-  output: > 
-    Executing binary not part of base image (user=%user.name user_loginuid=%user.loginuid user_uid=%user.uid comm=%proc.cmdline exe=%proc.exe container_id=%container.id
+  output: >
+    Executing binary not part of base image (user=%user.name user_loginuid=%user.loginuid user_uid=%user.uid pid=%proc.pid comm=%proc.cmdline exe=%proc.exe container_id=%container.id
     image=%container.image.repository proc.name=%proc.name proc.sname=%proc.sname proc.pname=%proc.pname proc.aname[2]=%proc.aname[2] exe_flags=%evt.arg.flags
     proc.exe_ino=%proc.exe_ino proc.exe_ino.ctime=%proc.exe_ino.ctime proc.exe_ino.mtime=%proc.exe_ino.mtime proc.exe_ino.ctime_duration_proc_start=%proc.exe_ino.ctime_duration_proc_start
     proc.exepath=%proc.exepath proc.cwd=%proc.cwd proc.tty=%proc.tty container.start_ts=%container.start_ts proc.sid=%proc.sid proc.vpgid=%proc.vpgid evt.res=%evt.res)
-  priority: CRITICAL 
+  priority: CRITICAL
   tags: [container, mitre_persistence, TA0003]
 
 - macro: user_known_cron_jobs
@@ -2620,9 +2620,9 @@
     (spawned_process and
      ((grep_commands and private_key_or_password) or
       (proc.name = "find" and
-        (proc.args contains "id_rsa" or 
-         proc.args contains "id_dsa" or 
-         proc.args contains "id_ed25519" or 
+        (proc.args contains "id_rsa" or
+         proc.args contains "id_dsa" or
+         proc.args contains "id_ed25519" or
          proc.args contains "id_ecdsa"
         )
       ))
@@ -3028,7 +3028,7 @@
 
 - list: authorized_server_binary
   items: []  # add binary to allow, i.e.: nginx
-  
+
 - list: authorized_server_port
   items: [] # add port to allow, i.e.: 80
 
@@ -3139,13 +3139,13 @@
 #    c2-servers-list.yaml: |-
 #      - list: c2_server_ip_list
 #        append: true
-#        items: 
+#        items:
 #        - "'51.178.161.32'"
 #        - "'46.101.90.205'"
-#        
+#
 #      - list: c2_server_fqdn_list
 #        append: true
-#        items: 
+#        items:
 #        - "srv-web.ffconsulting.com"
 #        - "57.ip-142-44-247.net"
 #  ```
@@ -3153,7 +3153,7 @@
 - rule: Outbound Connection to C2 Servers
   desc: Detect outbound connection to command & control servers thanks to a list of IP addresses & a list of FQDN.
   condition: >
-    outbound and 
+    outbound and
     ((fd.sip in (c2_server_ip_list)) or
      (fd.sip.name in (c2_server_fqdn_list)))
   output: Outbound connection to C2 server (c2_domain=%fd.sip.name c2_addr=%fd.sip command=%proc.cmdline connection=%fd.name user=%user.name user_loginuid=%user.loginuid container_id=%container.id image=%container.image.repository)
@@ -3370,13 +3370,13 @@
 - rule: PTRACE attached to process
   desc: "This rule detects an attempt to inject code into a process using PTRACE."
   condition: ptrace_attach_or_injection and proc_name_exists and not known_ptrace_procs
-  output: > 
+  output: >
     Detected ptrace PTRACE_ATTACH attempt (proc.cmdline=%proc.cmdline container=%container.info evt.type=%evt.type evt.arg.request=%evt.arg.request proc.pid=%proc.pid proc.cwd=%proc.cwd proc.ppid=%proc.ppid
     proc.pcmdline=%proc.pcmdline proc.sid=%proc.sid proc.exepath=%proc.exepath user.uid=%user.uid user.loginuid=%user.loginuid user.loginname=%user.loginname user.name=%user.name group.gid=%group.gid
     group.name=%group.name container.id=%container.id container.name=%container.name image=%container.image.repository)
   priority: WARNING
   tags: [host, container, process, mitre_execution, mitre_privilege_escalation, T1055.008]
-  
+
 - rule: PTRACE anti-debug attempt
   desc: "Detect usage of the PTRACE system call with the PTRACE_TRACEME argument, indicating a program actively attempting to avoid debuggers attaching to the process. This behavior is typically indicative of malware activity."
   condition: evt.type=ptrace and evt.dir=> and evt.arg.request contains PTRACE_TRACEME and proc_name_exists
@@ -3405,13 +3405,13 @@
 - rule: Execution from /dev/shm
   desc: This rule detects file execution from the /dev/shm directory, a common tactic for threat actors to stash their readable+writable+(sometimes)executable files.
   condition: >
-    spawned_process and 
-    (proc.exe startswith "/dev/shm/" or 
-    (proc.cwd startswith "/dev/shm/" and proc.exe startswith "./" ) or 
-    (shell_procs and proc.args startswith "-c /dev/shm") or 
-    (shell_procs and proc.args startswith "-i /dev/shm") or 
-    (shell_procs and proc.args startswith "/dev/shm") or 
-    (proc.cwd startswith "/dev/shm/" and proc.args startswith "./" )) and 
+    spawned_process and
+    (proc.exe startswith "/dev/shm/" or
+    (proc.cwd startswith "/dev/shm/" and proc.exe startswith "./" ) or
+    (shell_procs and proc.args startswith "-c /dev/shm") or
+    (shell_procs and proc.args startswith "-i /dev/shm") or
+    (shell_procs and proc.args startswith "/dev/shm") or
+    (proc.cwd startswith "/dev/shm/" and proc.args startswith "./" )) and
     not container.image.repository in (falco_privileged_images, trusted_images)
   output: "File execution detected from /dev/shm (proc.cmdline=%proc.cmdline connection=%fd.name user.name=%user.name user.loginuid=%user.loginuid container.id=%container.id evt.type=%evt.type evt.res=%evt.res proc.pid=%proc.pid proc.cwd=%proc.cwd proc.ppid=%proc.ppid proc.pcmdline=%proc.pcmdline proc.sid=%proc.sid proc.exepath=%proc.exepath user.uid=%user.uid user.loginname=%user.loginname group.gid=%group.gid group.name=%group.name container.name=%container.name image=%container.image.repository)"
   priority: WARNING
